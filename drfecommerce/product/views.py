@@ -10,6 +10,7 @@ from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import SqlLexer
 from sqlparse import format
+from django.db.models import Prefetch
 
 
 # Create your views here.
@@ -49,19 +50,25 @@ class ProductViewSet(viewsets.ViewSet):
     lookup_field = "slug"
 
     def retrieve(self, request, slug=None):
-        serializer = ProductSerializer(self.queryset.filter(slug=slug), many=True)
+        serializer = ProductSerializer(
+            Product.objects.filter(slug=slug)
+            .select_related("category", "brand")
+            .prefetch_related(Prefetch("product_line__product_image")),
+            many=True,
+        )
         # serializer = ProductSerializer(
         #     self.queryset.filter(slug=slug).select_related("category", "brand"),
         #     many=True,
         # )
         # data = Response(serializer.data)
         #
-        # q = list(connection.queries)
-        # print(len(q))
-        # for qs in q:
-        #     sqlformatted = format(str(qs["sql"]), reindent=True)
-        #     print(highlight(sqlformatted, SqlLexer(), TerminalFormatter()))
         data = Response(serializer.data)
+
+        q = list(connection.queries)
+        print(len(q))
+        for qs in q:
+            sqlformatted = format(str(qs["sql"]), reindent=True)
+            print(highlight(sqlformatted, SqlLexer(), TerminalFormatter()))
         return data
 
     @extend_schema(responses=ProductSerializer)
