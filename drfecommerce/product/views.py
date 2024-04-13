@@ -53,7 +53,8 @@ class ProductViewSet(viewsets.ViewSet):
         serializer = ProductSerializer(
             Product.objects.filter(slug=slug)
             .select_related("category", "brand")
-            .prefetch_related(Prefetch("product_line__product_image")),
+            .prefetch_related(Prefetch("product_line__product_image"))
+            .prefetch_related(Prefetch("product_line__attribute_value__attribute")),
             many=True,
         )
         # serializer = ProductSerializer(
